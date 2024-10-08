@@ -1,0 +1,13 @@
+So, you want to get MongoDB running on your computer? 
+
+Assuming you're on macOS, just follow along with this link: 
+https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-os-x/ 
+
+The general gist is to use Homebrew to install and run MongoDB locally.
+From here, you can access the local database using "mongosh" on the terminal, which is 
+just a shell that you can use to navigate about and make queries.
+
+After installation and starting MongoDB, when you run "yarn start", initialization should automatically happen.
+
+If you want to check if the items are added properly, using mongosh, type in: "use waterApp"
+Then, you can type "db.wateractivities.find().pretty()" to see the initial items.
