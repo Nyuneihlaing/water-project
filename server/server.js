@@ -2,14 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const app = express();
 const port = 3000;
-
-const waterActivitySchema = new mongoose.Schema({   // Schema
-    activity: String,
-    usageRatePerMinute: Number // Liters per minute
-  });
-  
-// Model for water activities
-const WaterActivity = mongoose.model('WaterActivity', waterActivitySchema);
+const WaterActivity = require('./models/WaterActivity'); // Le Schema import
 
 // MongoDB connection URL
 const mongoURL = 'mongodb://localhost:27017/waterApp';
