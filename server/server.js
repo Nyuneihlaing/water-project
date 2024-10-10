@@ -6,6 +6,9 @@ const WaterActivity = require('./models/WaterActivity'); // Le Schema import
 
 app.use(express.json());
 
+const cors = require('cors');
+app.use(cors());
+
 // MongoDB connection URL
 const mongoURL = 'mongodb://localhost:27017/waterApp';
 
@@ -41,15 +44,48 @@ mongoose.connect(mongoURL)
 })
 .catch(err => console.error('Error connecting to MongoDB:', err));
 
-app.post('/calculate-usage', (req, res) => {
-  const {usageRate, minutes} = req.body;
+//get all activities
+app.get('/activities', async(req, res) => {
+  try {
+    const activities = await WaterActivity.find();
+    res.json(activities);
+  } catch(err) {
+    res.status(500).json({error: 'Failed to fetch activities.'})
+  }
+});
 
-  if (!usageRate || !minutes) {
+//add new activity
+app.post('/activities', async(req, res) => {
+  const { activity, minutes } = req.body;
+
+  if (!activity || !minutes) {
+    return res.status(400).json({error: 'Activity and minutes not entered.'})
+  }
+
+  try  {
+    const newActivity = new WaterActivity({activity, usageRatePerMinute})
+    await newActivity.save();
+    res.json(newActivity);
+  } catch(err) {
+    res.status(500).json({error: "Failed to add new activity."})
+  }
+})
+
+//calcuate water usage
+app.post('/calculate-usage', async(req, res) => {
+  const {activity, minutes} = req.body;
+
+  if (!activity || !minutes) {
     return res.status(400).json({error: "Usage and minutes not entered."})
   }
   try {
-    const totalUsage = usageRate * minutes;
-    res.json({totalUsage});
+    const activityDoc = await WaterActivity.findOne({ activity });
+    if (!activityDoc) {
+      return res.status(400).json({ error: "Invalid activity." });
+    }
+    // Calculate total water usage
+    const totalUsage = activityDoc.usageRatePerMinute * minutes;
+    res.json({ totalUsage });
   } catch (err) {
     res.status(500).json({error: "Calculation failed."});
   }
