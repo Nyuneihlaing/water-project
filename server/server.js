@@ -4,6 +4,8 @@ const app = express();
 const port = 3000;
 const WaterActivity = require('./models/WaterActivity'); // Le Schema import
 
+app.use(express.json());
+
 // MongoDB connection URL
 const mongoURL = 'mongodb://localhost:27017/waterApp';
 
@@ -38,6 +40,20 @@ mongoose.connect(mongoURL)
     initializeWaterActivities();
 })
 .catch(err => console.error('Error connecting to MongoDB:', err));
+
+app.post('/calculate-usage', (req, res) => {
+  const {usageRate, minutes} = req.body;
+
+  if (!usageRate || !minutes) {
+    return res.status(400).json({error: "Usage and minutes not entered."})
+  }
+  try {
+    const totalUsage = usageRate * minutes;
+    res.json({totalUsage});
+  } catch (err) {
+    res.status(500).json({error: "Calculation failed."});
+  }
+});
 
 // Start up the server!
 app.listen(port, () => {
