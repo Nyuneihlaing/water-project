@@ -12,9 +12,11 @@ function CalculatePage() {
   useEffect(() => {
     axios.get('http://localhost:3000/activities')
       .then(response => {
-        console.log(response.data);
+        console.log("Fetched activities:", response.data); // Debug: log fetched data
         setActivities(response.data);
-        setSelectedActivity(response.data[0]?.activity || '');
+        if (response.data.length > 0) {
+          setSelectedActivity(response.data[0].activity); // Set default selected activity
+        }
       })
       .catch(error => {
         const message = error.response?.data?.message || "Error fetching activities.";
@@ -68,11 +70,15 @@ function CalculatePage() {
             onChange={(e) => setSelectedActivity(e.target.value)}
           >
             <option value="" disabled>Select an activity</option>
-            {activities.map((activity, index) => (
-              <option key={index} value={activity.activity}>
-                {activity.activity} ({activity.usageRatePerMinute} L/min)
-              </option>
-            ))}
+            {activities.length > 0 ? (
+              activities.map((activity, index) => (
+                <option key={index} value={activity.activity}>
+                  {activity.activity} ({activity.usageRatePerMinute} L/min)
+                </option>
+              ))
+            ) : (
+              <option value="" disabled>No activities available</option>
+            )}
           </select>
         </div>
 
