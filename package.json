@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
 <<<<<<< Updated upstream
   "scripts": {
     "start": "concurrently  \"yarn start-server\" \"yarn start-client\"",
@@ -17,3 +18,15 @@
     }
   }
 >>>>>>> Stashed changes
+=======
+    "scripts": {
+      "start": "concurrently \"yarn start-client\" \"yarn start-server\"",
+      "start-client": "yarn --cwd client start",
+      "start-server": "yarn --cwd server start"
+    },
+    "devDependencies": {
+      "concurrently": "^9.0.1"
+    }
+  }
+  
+>>>>>>> parent of aea747a6 (Added Concurrently Dependency)
