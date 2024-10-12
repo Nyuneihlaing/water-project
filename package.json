@@ -1,8 +1,8 @@
 {
   "scripts": {
-    "start": "concurrently \"yarn start-client\" \"yarn start-server\"",
-    "start-client": "yarn --cwd client start",
-    "start-server": "yarn --cwd server start"
+    "start": "concurrently  \"yarn start-server\" \"yarn start-client\"",
+    "start-server": "yarn --cwd server start",
+    "start-client": "yarn --cwd client start"
   },
   "devDependencies": {
     "concurrently": "^9.0.1"
