@@ -4,4 +4,4 @@
       "start-client": "yarn --cwd client start",
       "start-server": "yarn --cwd server start"
     }
-  }
+}
