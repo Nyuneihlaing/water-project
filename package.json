@@ -1,7 +1,7 @@
 {
-    "name": "your-root-project",
-    "version": "1.0.0",
     "scripts": {
-      "start": "concurrently \"yarn --cwd server start\" \"yarn --cwd client start\""
+      "start": "concurrently \"yarn start-client\" \"yarn start-server\"",
+      "start-client": "yarn --cwd client start",
+      "start-server": "yarn --cwd server start"
     }
-  }
+}

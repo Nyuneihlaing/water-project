@@ -54,7 +54,7 @@ return (
       <form className="bg-white p-6 rounded-lg shadow-md w-full max-w-md" onSubmit={handleSubmit}>
         {error && <p className="text-red-500 mb-4">{error}</p>}
 
-        {/* Dropdown for activities */}
+      {/* Dropdown for activities */}
         <div className="mb-4">
           <label htmlFor="activity" className="block text-sm font-medium text-gray-700">Select Activity:</label>
           <select
@@ -63,11 +63,16 @@ return (
             value={selectedActivity}
             onChange={(e) => setSelectedActivity(e.target.value)}
           >
-            {activities.map((activity, index) => (
-              <option key={index} value={activity.activity}>
-                {activity.activity} ({activity.usageRatePerMinute} L/min)
-              </option>
-            ))}
+            <option value="" disabled>Select an activity</option>
+            {activities.length > 0 ? (
+              activities.map((activity, index) => (
+                <option key={index} value={activity.activity}>
+                  {activity.activity} ({activity.usageRatePerMinute} L/min)
+                </option>
+              ))
+            ) : (
+              <option value="" disabled>No activities available</option>
+            )}
           </select>
         </div>
 
