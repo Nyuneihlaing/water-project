@@ -3,8 +3,7 @@ import axios from 'axios';
 
 function CalculatePage() {
   const [activities, setActivities] = useState([]);
-  const [selectedActivity, setSelectedActivity] = useState('');
-  const [minutes, setMinutes] = useState('');
+  const [activityFields, setActivityFields] = useState([{ selectedActivity: '', minutes: '' }]); 
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
 
@@ -13,7 +12,7 @@ useEffect(() => {
         .then(response => {
             console.log(response.data);
             setActivities(response.data);
-            setSelectedActivity(response.data[0].activity);
+            setActivityFields([{ selectedActivity: response.data[0]?.activity || '', minutes: '' }]);
         })
         .catch(error => {
             console.error("Error fetching activities", error);
@@ -21,29 +20,64 @@ useEffect(() => {
         });
 }, []);
 
+// When called, it adds a NEW activity to the array
+const addActivityField = () => {
+  setActivityFields([...activityFields, { selectedActivity: '', minutes: '' }]);
+};
+
+const removeActivityField = (index) => {
+  if (activityFields.length > 1) {
+    const newFields = activityFields.filter((_, i) => i !== index);
+    setActivityFields(newFields);
+  }
+};
+
+// Needed as we now have a dynamic list
+const handleInputChange = (index, field, value) => {
+  const newFields = [...activityFields];
+  newFields[index][field] = value;
+  setActivityFields(newFields);
+};
+
 //function to set selected activity 
 const handleSubmit = async (e) => {
     e.preventDefault();
-  
-    console.log("Selected Activity:", selectedActivity);
-    console.log("Minutes:", minutes);
-  
-    if (!selectedActivity || !minutes){
-        setError("Please select an activity and enter the time taken");
+    
+    // For checking if all activities are filled and there are NO duplicates
+    const selectedActivities = activityFields.map(field => field.selectedActivity);
+
+    for (const field of activityFields) { // Checks that each is filled in.
+      if (!field.selectedActivity || !field.minutes) {
+        setError("Please select an activity and enter the time taken for all fields.");
+        return;
+      }
+    }
+
+    // Check for duplicates
+    const uniqueActivities = new Set(selectedActivities);
+    if (uniqueActivities.size !== selectedActivities.length) {
+        setError("Each activity must be unique. Please remove or change any duplicate activities.");
         return;
     }
+
   
     try {
-        const response = await axios.post('http://localhost:3000/calculate-usage', {
-            activity: selectedActivity,
-            minutes: parseFloat(minutes),
-        });
-        console.log("Response data:", response.data);  
-        setResult(`Total water usage: ${response.data.totalUsage} liters`);
-        setError(''); 
+      // The collection of requests. Sent asynchronously, hence Promise
+      const usagePromises = activityFields.map(field =>
+        axios.post('http://localhost:3000/calculate-usage', {
+          activity: field.selectedActivity,
+          minutes: parseFloat(field.minutes),
+        })
+      );
+    
+      const responses = await Promise.all(usagePromises); // Sends the requests, and wait for all of them
+      const totalUsage = responses.reduce((sum, response) => sum + response.data.totalUsage, 0); // Sum up results
+    
+      setResult(`Total water usage: ${totalUsage} liters`);
+      setError('');
     } catch (err) {
-        console.error("Error calculating water usage:", err);
-        setError("Failed to calculate water usage.");
+      console.error("Error calculating water usage:", err);
+      setError("Failed to calculate water usage.");
     }
 };
 
@@ -54,40 +88,73 @@ return (
       <form className="bg-white p-6 rounded-lg shadow-md w-full max-w-md" onSubmit={handleSubmit}>
         {error && <p className="text-red-500 mb-4">{error}</p>}
 
-      {/* Dropdown for activities */}
-        <div className="mb-4">
-          <label htmlFor="activity" className="block text-sm font-medium text-gray-700">Select Activity:</label>
-          <select
-            id="activity"
-            className="block w-full p-2 border border-gray-300 rounded mt-1"
-            value={selectedActivity}
-            onChange={(e) => setSelectedActivity(e.target.value)}
-          >
-            <option value="" disabled>Select an activity</option>
-            {activities.length > 0 ? (
-              activities.map((activity, index) => (
-                <option key={index} value={activity.activity}>
-                  {activity.activity} ({activity.usageRatePerMinute} L/min)
-                </option>
-              ))
-            ) : (
-              <option value="" disabled>No activities available</option>
-            )}
-          </select>
+      {/* Headers for Activity and Minutes */}
+      <div className="flex mb-4">
+        <div className="w-3/4">
+          <label className="block text-sm font-medium text-gray-700">Activity:</label>
         </div>
+        <div className="w-1/4">
+          <label className="block text-sm font-medium text-gray-700">Minutes:</label>
+        </div>
+      </div>
 
-        {/* Input field for minutes */}
-        <div className="mb-4">
-          <label htmlFor="minutes" className="block text-sm font-medium text-gray-700">Enter minutes:</label>
-          <input
-            type="number"
-            id="minutes"
-            className="block w-full p-2 border border-gray-300 rounded mt-1"
-            value={minutes}
-            onChange={(e) => setMinutes(e.target.value)}
-            placeholder="Enter minutes spent on activity"
-          />
+      {/* Dynamic fields for multiple activities */}
+      {activityFields.map((field, index) => (
+        <div key={index} className="flex justify-between items-center mb-4">
+          {/* Dropdown for activities */}
+          <div className="w-2/3 mr-2">
+            <select
+              id={`activity-${index}`}
+              className="block w-full p-2 border border-gray-300 rounded mt-1"
+              value={field.selectedActivity}
+              onChange={(e) => handleInputChange(index, 'selectedActivity', e.target.value)}
+            >
+              <option value="" disabled>Select an activity</option>
+              {activities.length > 0 ? (
+                activities.map((activity, i) => (
+                  <option key={i} value={activity.activity}>
+                    {activity.activity} ({activity.usageRatePerMinute} L/min)
+                  </option>
+                ))
+              ) : (
+                <option value="" disabled>No activities available</option>
+              )}
+            </select>
+          </div>
+
+          {/* Input field for minutes */}
+          <div className="w-1/3">
+            <input
+              type="number"
+              id={`minutes-${index}`}
+              className="block w-full p-2 border border-gray-300 rounded mt-1"
+              value={field.minutes}
+              onChange={(e) => handleInputChange(index, 'minutes', e.target.value)}
+              placeholder="Enter minutes"
+            />
+          </div>
+
+          {/* Remove button */}
+          {activityFields.length > 1 && (
+              <button
+                type="button"
+                className="ml-2 bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                onClick={() => removeActivityField(index)}
+              >
+                X
+              </button>
+            )}
         </div>
+      ))}
+
+        {/* Button to add a new activity field */}
+        <button
+          type="button"
+          className="w-full bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600 mb-4"
+          onClick={addActivityField}
+        >
+          Add Another Activity
+        </button>
 
         {/* Submit button */}
         <button
