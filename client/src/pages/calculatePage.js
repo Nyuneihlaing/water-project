@@ -23,12 +23,14 @@ useEffect(() => {
 // When called, it adds a NEW activity to the array
 const addActivityField = () => {
   setActivityFields([...activityFields, { selectedActivity: '', minutes: '' }]);
+  setResult(null);  // Reset result when new activity is added
 };
 
 const removeActivityField = (index) => {
   if (activityFields.length > 1) {
     const newFields = activityFields.filter((_, i) => i !== index);
     setActivityFields(newFields);
+    setResult(null);  // Reset result when an activity is removed
   }
 };
 
@@ -37,6 +39,7 @@ const handleInputChange = (index, field, value) => {
   const newFields = [...activityFields];
   newFields[index][field] = value;
   setActivityFields(newFields);
+  setResult(null);  // Reset result when an edit is made
 };
 
 //function to set selected activity 
