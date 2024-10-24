@@ -75,8 +75,11 @@ app.post('/activities', async(req, res) => {
 app.post('/calculate-usage', async(req, res) => {
   const {activity, minutes} = req.body;
 
-  if (!activity || !minutes) {
+  if (!activity || minutes === null || minutes === undefined) {
     return res.status(400).json({error: "Usage and minutes not entered."})
+  }
+  if (minutes < 0) {
+    return res.status(400).json({ error: "Minutes cannot be negative." });
   }
   try {
     const activityDoc = await WaterActivity.findOne({ activity });

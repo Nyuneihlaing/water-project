@@ -80,7 +80,7 @@ const handleSubmit = async (e) => {
       setError('');
     } catch (err) {
       console.error("Error calculating water usage:", err);
-      setError("Failed to calculate water usage.");
+      setError(`Failed to calculate water usage: ${err.response?.data?.error || err.message || "Unknown error"}`);
     }
 };
 
