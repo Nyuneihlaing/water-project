@@ -101,27 +101,37 @@ app.post('/save-usage', async (req, res) => {
   const { usage } = req.body;
 
   if (!usage || !Array.isArray(usage) || usage.length === 0) {
-      return res.status(400).json({ error: "Usage data must be provided." });
+    return res.status(400).json({ error: "Usage data must be provided." });
   }
 
   try {
-      // get the current date
-      const currentDate = new Date();
-      const formattedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+    const formattedDate = new Date(); // Use the current date
 
+    const updatedUsage = usage.map((entry) => ({
+      activity: entry.activity,
+      minutes: entry.minutes
+    }));
+
+    const existingUsage = await WaterUsage.findOne({ date: formattedDate.toDateString() });
+
+    if (existingUsage) {
+      existingUsage.usage.push(...updatedUsage);
+      await existingUsage.save();
+      res.json({ message: 'Water usage updated successfully!', waterUsage: existingUsage });
+    } else {
       const newWaterUsage = new WaterUsage({
-          date: formattedDate,
-          usage: usage
+        date: formattedDate.toDateString(),
+        usage: updatedUsage
       });
-
-      // Ssve the record to the database
       await newWaterUsage.save();
       res.json({ message: 'Water usage saved successfully!', waterUsage: newWaterUsage });
+    }
   } catch (err) {
-      console.error('Error saving water usage:', err);
-      res.status(500).json({ error: 'Failed to save water usage.' });
+    console.error('Error saving water usage:', err);
+    res.status(500).json({ error: 'Failed to save water usage.' });
   }
 });
+
 
 // check if usage data for today exists
 app.get('/usage-exists', async (req, res) => {
