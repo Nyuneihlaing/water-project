@@ -6,6 +6,7 @@ function CalculatePage() {
   const [activityFields, setActivityFields] = useState([{ selectedActivity: '', minutes: '' }]); 
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [showSaveButton, setShowSaveButton] = useState(false);
 
 useEffect(() => {
     axios.get('http://localhost:3000/activities')
@@ -24,6 +25,7 @@ useEffect(() => {
 const addActivityField = () => {
   setActivityFields([...activityFields, { selectedActivity: '', minutes: '' }]);
   setResult(null);  // Reset result when new activity is added
+  setShowSaveButton(false);
 };
 
 const removeActivityField = (index) => {
@@ -31,6 +33,7 @@ const removeActivityField = (index) => {
     const newFields = activityFields.filter((_, i) => i !== index);
     setActivityFields(newFields);
     setResult(null);  // Reset result when an activity is removed
+    setShowSaveButton(false);
   }
 };
 
@@ -40,6 +43,7 @@ const handleInputChange = (index, field, value) => {
   newFields[index][field] = value;
   setActivityFields(newFields);
   setResult(null);  // Reset result when an edit is made
+  setShowSaveButton(false);
 };
 
 //function to set selected activity 
@@ -78,11 +82,46 @@ const handleSubmit = async (e) => {
     
       setResult(`Total water usage: ${totalUsage} liters`);
       setError('');
+      setShowSaveButton(true);
     } catch (err) {
       console.error("Error calculating water usage:", err);
       setError(`Failed to calculate water usage: ${err.response?.data?.error || err.message || "Unknown error"}`);
     }
 };
+
+// save function that sends data to the backend
+const handleSave = async () => {
+  const dataToSave = {
+    usage: activityFields.map(field => ({
+      activity: field.selectedActivity,
+      minutes: parseFloat(field.minutes)
+    })),
+    date: new Date().toISOString() 
+  };
+
+  try {
+    const response = await axios.get('http://localhost:3000/usage-exists');
+    
+    if (response.data.exists) {
+      const confirmOverwrite = window.confirm("Usage data for today already exists. Do you want to overwrite it?");
+      if (confirmOverwrite) {
+        await axios.delete('http://localhost:3000/delete-usage');
+      } else {
+        // user chose not to overwrite, exit the function
+        return;
+      }
+    }
+
+    // save the new usage data
+    await axios.post('http://localhost:3000/save-usage', dataToSave);
+    alert('Usage data successfully saved!');
+    setShowSaveButton(false); // hide the save button after saving
+  } catch (err) {
+    console.error("Error saving usage data:", err);
+    setError(`Failed to save usage data: ${err.response?.data?.error || err.message || "Unknown error"}`);
+  }
+};
+
 
 return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center">
@@ -169,7 +208,17 @@ return (
       </form>
 
       {/* Display result */}
-      {result && <div className="mt-6 text-lg">{result}</div>}
+      {result && <div className="mt-6 text-lg">
+        {result}
+        
+        {showSaveButton && (
+          <button onClick={handleSave}
+            className="w-full mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded hover:bg-yellow-600"
+          >
+            Save
+          </button>
+          )}
+        </div>}
     </div>
   );
 }
