@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const app = express();
 const port = 3000;
 const WaterActivity = require('./models/WaterActivity'); // Le Schema import
+const WaterUsage = require('./models/WaterUsage');
 
 app.use(express.json());
 
@@ -91,6 +92,66 @@ app.post('/calculate-usage', async(req, res) => {
     res.json({ totalUsage });
   } catch (err) {
     res.status(500).json({error: "Calculation failed."});
+  }
+});
+
+
+// save the usage of a day into a document
+app.post('/save-usage', async (req, res) => {
+  const { usage } = req.body;
+
+  if (!usage || !Array.isArray(usage) || usage.length === 0) {
+      return res.status(400).json({ error: "Usage data must be provided." });
+  }
+
+  try {
+      // get the current date
+      const currentDate = new Date();
+      const formattedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+
+      const newWaterUsage = new WaterUsage({
+          date: formattedDate,
+          usage: usage
+      });
+
+      // Ssve the record to the database
+      await newWaterUsage.save();
+      res.json({ message: 'Water usage saved successfully!', waterUsage: newWaterUsage });
+  } catch (err) {
+      console.error('Error saving water usage:', err);
+      res.status(500).json({ error: 'Failed to save water usage.' });
+  }
+});
+
+// check if usage data for today exists
+app.get('/usage-exists', async (req, res) => {
+  const currentDate = new Date();
+  const formattedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+
+  try {
+    const existingUsage = await WaterUsage.findOne({ date: formattedDate });
+    if (existingUsage) {
+      return res.json({ exists: true });
+    } else {
+      return res.json({ exists: false });
+    }
+  } catch (err) {
+    console.error('Error checking usage existence:', err);
+    res.status(500).json({ error: 'Failed to check usage existence.' });
+  }
+});
+
+// delete usage data for today
+app.delete('/delete-usage', async (req, res) => {
+  const currentDate = new Date();
+  const formattedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+
+  try {
+    await WaterUsage.deleteOne({ date: formattedDate });
+    res.json({ message: 'Usage data deleted successfully.' });
+  } catch (err) {
+    console.error('Error deleting usage data:', err);
+    res.status(500).json({ error: 'Failed to delete usage data.' });
   }
 });
 
