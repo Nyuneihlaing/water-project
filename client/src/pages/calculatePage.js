@@ -94,33 +94,21 @@ const handleSave = async () => {
   const dataToSave = {
     usage: activityFields.map(field => ({
       activity: field.selectedActivity,
-      minutes: parseFloat(field.minutes)
+      minutes: parseFloat(field.minutes),
+      // No timestamp, so this will just save the current date in the backend
     })),
-    date: new Date().toISOString() 
+    date: new Date().toISOString() // Use current date as the overall entry date
   };
 
   try {
-    const response = await axios.get('http://localhost:3000/usage-exists');
-    
-    if (response.data.exists) {
-      const confirmOverwrite = window.confirm("Usage data for today already exists. Do you want to overwrite it?");
-      if (confirmOverwrite) {
-        await axios.delete('http://localhost:3000/delete-usage');
-      } else {
-        // user chose not to overwrite, exit the function
-        return;
-      }
-    }
-
-    // save the new usage data
     await axios.post('http://localhost:3000/save-usage', dataToSave);
     alert('Usage data successfully saved!');
-    setShowSaveButton(false); // hide the save button after saving
+    setShowSaveButton(false);
   } catch (err) {
-    console.error("Error saving usage data:", err);
-    setError(`Failed to save usage data: ${err.response?.data?.error || err.message || "Unknown error"}`);
+    setError("Failed to save usage data.");
   }
 };
+
 
 
 return (
