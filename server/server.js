@@ -105,14 +105,14 @@ app.post('/save-usage', async (req, res) => {
   }
 
   try {
-    const formattedDate = new Date(); // Use the current date
+    const formattedDate = new Date().toISOString().split("T")[0]; // ISO format for consistency
 
     const updatedUsage = usage.map((entry) => ({
       activity: entry.activity,
       minutes: entry.minutes
     }));
 
-    const existingUsage = await WaterUsage.findOne({ date: formattedDate.toDateString() });
+    const existingUsage = await WaterUsage.findOne({ date: formattedDate });
 
     if (existingUsage) {
       existingUsage.usage.push(...updatedUsage);
@@ -120,7 +120,7 @@ app.post('/save-usage', async (req, res) => {
       res.json({ message: 'Water usage updated successfully!', waterUsage: existingUsage });
     } else {
       const newWaterUsage = new WaterUsage({
-        date: formattedDate.toDateString(),
+        date: formattedDate,
         usage: updatedUsage
       });
       await newWaterUsage.save();
@@ -131,6 +131,7 @@ app.post('/save-usage', async (req, res) => {
     res.status(500).json({ error: 'Failed to save water usage.' });
   }
 });
+
 
 
 // check if usage data for today exists
@@ -164,6 +165,52 @@ app.delete('/delete-usage', async (req, res) => {
     res.status(500).json({ error: 'Failed to delete usage data.' });
   }
 });
+
+app.get('/water-usage-history', async (req, res) => {
+  const { date } = req.query;
+  const formattedDate = new Date(date);
+
+  try {
+    const usageEntry = await WaterUsage.findOne({ date: formattedDate });
+    
+    if (!usageEntry) {
+      return res.status(404).json({ error: "No usage data found for this date" });
+    }
+
+    res.json(usageEntry);
+  } catch (err) {
+    console.error("Error fetching water usage history:", err);
+    res.status(500).json({ error: "Failed to fetch water usage history." });
+  }
+});
+
+
+app.get('/calculate-total-usage', async (req, res) => {
+  const { date } = req.query;
+  const formattedDate = new Date(date).toISOString().split("T")[0];
+
+  try {
+    const usageEntry = await WaterUsage.findOne({ date: formattedDate });
+
+    if (!usageEntry) {
+      return res.status(404).json({ error: "No usage data found for this date" });
+    }
+
+    // Calculate total usage by looking up each activity's usage rate
+    let totalUsage = 0;
+    for (const activity of usageEntry.usage) {
+      const activityDoc = await WaterActivity.findOne({ activity: activity.activity });
+      const usageRate = activityDoc ? activityDoc.usageRatePerMinute : 0;
+      totalUsage += activity.minutes * usageRate;
+    }
+
+    res.json({ totalUsage });
+  } catch (err) {
+    console.error("Error calculating total water usage:", err);
+    res.status(500).json({ error: "Failed to calculate total water usage." });
+  }
+});
+
 
 // Start up the server!
 app.listen(port, () => {
