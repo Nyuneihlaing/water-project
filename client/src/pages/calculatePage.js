@@ -95,9 +95,7 @@ const handleSave = async () => {
     usage: activityFields.map(field => ({
       activity: field.selectedActivity,
       minutes: parseFloat(field.minutes),
-      // No timestamp, so this will just save the current date in the backend
     })),
-    date: new Date().toISOString() // Use current date as the overall entry date
   };
 
   try {
@@ -108,6 +106,7 @@ const handleSave = async () => {
     setError("Failed to save usage data.");
   }
 };
+
 
 
 
