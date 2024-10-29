@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 function HistoryPage() {
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]); // Set default date to today
+  const [date, setDate] = useState(getLocalDate()); // Set default date to today
   const [usageData, setUsageData] = useState([]);
   const [totalUsage, setTotalUsage] = useState(0);
   const [error, setError] = useState('');
@@ -11,6 +11,11 @@ function HistoryPage() {
     fetchUsageData();
     fetchTotalUsage();
   }, [date]);
+
+  function getLocalDate() {
+    const today = new Date();
+    return new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split("T")[0];
+  }
 
   const fetchUsageData = async () => {
     try {
@@ -73,7 +78,7 @@ function HistoryPage() {
       {/* Display Total Usage */}
       <div className="mt-6">
         <h2 className="text-xl font-bold">
-          Total Water Usage for {new Date(date).toLocaleDateString()}: {totalUsage} L
+          Total Water Usage for {new Date(date + 'T00:00').toLocaleDateString()}: {totalUsage} L
         </h2>
       </div>
     </div>
