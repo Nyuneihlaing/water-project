@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 function HistoryPage() {
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]); // Set default date to today
+  const [date, setDate] = useState(getLocalDate()); // Set default date to today
   const [usageData, setUsageData] = useState([]);
   const [totalUsage, setTotalUsage] = useState(0);
   const [error, setError] = useState('');
@@ -11,6 +11,11 @@ function HistoryPage() {
     fetchUsageData();
     fetchTotalUsage();
   }, [date]);
+
+  function getLocalDate() {
+    const today = new Date();
+    return new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split("T")[0];
+  }
 
   const fetchUsageData = async () => {
     try {
@@ -31,7 +36,9 @@ function HistoryPage() {
       setTotalUsage(response.data.totalUsage);
     } catch (err) {
       console.error("Error fetching total water usage:", err);
-      setError("Failed to fetch total water usage.");
+      setError("Failed to fetch total water usage or no history detected.");
+      setUsageData([]);
+      setTotalUsage(0);
     }
   };
 
@@ -53,29 +60,33 @@ function HistoryPage() {
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       {/* Water Usage Data Table */}
-      <table className="w-full max-w-4xl bg-white rounded-lg shadow-md">
-        <thead className="bg-blue-500 text-white">
-          <tr>
-            <th className="p-4">Activity</th>
-            <th className="p-4">Minutes</th>
-          </tr>
-        </thead>
-        <tbody>
-          {usageData.map((activity, index) => (
-            <tr key={index} className="border-t">
-              <td className="p-4">{activity.activity}</td>
-              <td className="p-4">{activity.minutes} min</td>
+      {usageData.length > 0 && (
+        <table className="w-full max-w-4xl bg-white rounded-lg shadow-md">
+          <thead className="bg-blue-500 text-white">
+            <tr>
+              <th className="p-4">Activity</th>
+              <th className="p-4">Minutes</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {usageData.map((activity, index) => (
+              <tr key={index} className="border-t">
+                <td className="p-4">{activity.activity}</td>
+                <td className="p-4">{activity.minutes} min</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
 
       {/* Display Total Usage */}
-      <div className="mt-6">
-        <h2 className="text-xl font-bold">
-          Total Water Usage for {new Date(date).toLocaleDateString()}: {totalUsage} L
-        </h2>
-      </div>
+      {usageData.length > 0 && !error && (
+        <div className="mt-6">
+          <h2 className="text-xl font-bold">
+            Total Water Usage for {new Date(date + 'T00:00').toLocaleDateString()}: {totalUsage} L
+          </h2>
+        </div>
+      )}
     </div>
   );
 }

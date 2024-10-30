@@ -105,7 +105,7 @@ app.post('/save-usage', async (req, res) => {
   }
 
   try {
-    const formattedDate = new Date().toISOString().split("T")[0]; // ISO format for consistency
+    const formattedDate = getLocalDateWithoutTime(); // ISO format for consistency
 
     const updatedUsage = usage.map((entry) => ({
       activity: entry.activity,
@@ -136,8 +136,8 @@ app.post('/save-usage', async (req, res) => {
 
 // check if usage data for today exists
 app.get('/usage-exists', async (req, res) => {
-  const currentDate = new Date();
-  const formattedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+  //const currentDate = new Date();
+  const formattedDate = getLocalDateWithoutTime();
 
   try {
     const existingUsage = await WaterUsage.findOne({ date: formattedDate });
@@ -154,8 +154,8 @@ app.get('/usage-exists', async (req, res) => {
 
 // delete usage data for today
 app.delete('/delete-usage', async (req, res) => {
-  const currentDate = new Date();
-  const formattedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+  //const currentDate = new Date();
+  const formattedDate = getLocalDateWithoutTime();
 
   try {
     await WaterUsage.deleteOne({ date: formattedDate });
@@ -211,6 +211,13 @@ app.get('/calculate-total-usage', async (req, res) => {
   }
 });
 
+
+// Helper function
+function getLocalDateWithoutTime() {
+  const today = new Date();
+  const localDateOnlyString = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString().split("T")[0];
+  return new Date(localDateOnlyString);
+}
 
 // Start up the server!
 app.listen(port, () => {
