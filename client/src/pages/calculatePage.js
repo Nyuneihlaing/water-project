@@ -4,8 +4,10 @@ import axios from 'axios';
 function CalculatePage() {
   const [activities, setActivities] = useState([]);
   const [activityFields, setActivityFields] = useState([{ selectedActivity: '', minutes: '' }]); 
+  const [newActivity, setNewActivity] = useState({name: '', rate: ''});
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [showSaveButton, setShowSaveButton] = useState(false);
 
 useEffect(() => {
@@ -20,6 +22,30 @@ useEffect(() => {
             setError("Error fetching activities.");
         });
 }, []);
+
+const addNewActivity = async () => {
+  if (!newActivity.name || !newActivity.rate) {
+    setError("Please provide a name and rate for the new activity.");
+    return;
+  }
+  try {
+    const response = await axios.post('http://localhost:3000/activities', {
+      activity: newActivity.name,
+      usageRatePerMinute: parseFloat(newActivity.rate),
+    });
+    //update activities
+    setActivities([...activities, response.data]);
+    //reset field to empty values
+    setNewActivity({ name: '', rate: '' });
+    setError('');
+    setSuccessMessage("Activity successfully added!");
+    // Clear success message after 3 secs
+    setTimeout(() => setSuccessMessage(''), 3000);
+
+  }catch (error) {
+    setError("Failed to add new activity.");
+  }
+};
 
 // When called, it adds a NEW activity to the array
 const addActivityField = () => {
@@ -107,9 +133,6 @@ const handleSave = async () => {
   }
 };
 
-
-
-
 return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center">
       <h1 className="text-3xl font-bold mb-6 text-blue-500">Water Usage Calculator</h1>
@@ -193,6 +216,28 @@ return (
           Calculate
         </button>
       </form>
+
+      {/* Add new activity form */}
+      <div className="bg-white p-4 rounded-lg shadow-md mt-6 w-full max-w-md">
+        <h2 className="text-xl font-bold mb-2">Add New Activity</h2>
+        <input
+          type="text"
+          placeholder="Activity Name"
+          value={newActivity.name}
+          onChange={(e) => setNewActivity({ ...newActivity, name: e.target.value })}
+          className="block w-full p-2 border border-gray-300 rounded mb-2"
+        />
+        <input
+          type="number"
+          placeholder="Usage Rate per Minute (L/min)"
+          value={newActivity.rate}
+          onChange={(e) => setNewActivity({ ...newActivity, rate: e.target.value })}
+          className="block w-full p-2 border border-gray-300 rounded mb-2"
+        />
+        <button onClick={addNewActivity} className="bg-green-500 text-white p-2 rounded">Add Activity</button>
+      </div>
+      {/* Success message */}
+      {successMessage && <p className="text-green-500 mb-4">{successMessage}</p>}
 
       {/* Display result */}
       {result && <div className="mt-6 text-lg">
