@@ -57,10 +57,10 @@ app.get('/activities', async(req, res) => {
 
 //add new activity
 app.post('/activities', async(req, res) => {
-  const { activity, minutes } = req.body;
+  const { activity, usageRatePerMinute } = req.body;
 
-  if (!activity || !minutes) {
-    return res.status(400).json({error: 'Activity and minutes not entered.'})
+  if (!activity || usageRatePerMinute == null) {
+    return res.status(400).json({error: 'Activity and usage rate not entered.'})
   }
 
   try  {
