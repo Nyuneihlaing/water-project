@@ -29,10 +29,10 @@ function MenuBar() {
         </li>
         <li>
           <Link
-            to="/options"
-            className={`text-white font-semibold px-4 py-2 rounded ${isActive('/options') ? 'bg-blue-700' : 'hover:bg-blue-600'}`}
+            to="/misc"
+            className={`text-white font-semibold px-4 py-2 rounded ${isActive('/misc') ? 'bg-blue-700' : 'hover:bg-blue-600'}`}
           >
-            Options
+            Misc
           </Link>
         </li>
       </ul>

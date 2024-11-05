@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import CalculatePage from './pages/calculatePage';
 import HistoryPage from './pages/historyPage';
-import OptionsPage from './pages/optionsPage';
+import MiscPage from './pages/miscPage';
 import MenuBar from './components/Menubar';
 
 function App() {
@@ -14,7 +14,7 @@ function App() {
         <Routes>
           <Route path="/" element={<CalculatePage />} />
           <Route path="/history" element={<HistoryPage />} />
-          <Route path="/options" element={<OptionsPage />} />
+          <Route path="/misc" element={<MiscPage />} />
         </Routes>
       </div>
     </Router>
