@@ -5,6 +5,7 @@ import HistoryPage from './pages/historyPage';
 import MiscPage from './pages/miscPage';
 import AnalysisPage from './pages/analysisPage';
 import MenuBar from './components/Menubar';
+import LearnMorePage from './pages/LearnMorePage';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/misc" element={<MiscPage />} />
           <Route path="/analysis" element={<AnalysisPage />} />
+          <Route path="/learn-more" element={<LearnMorePage />} />
         </Routes>
       </div>
     </Router>
