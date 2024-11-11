@@ -342,6 +342,52 @@ app.post('/set-water-limit', async (req, res) => {
   }
 });
 
+// get all past usages and format it for table
+app.get('/past-usage', async (req, res) => {
+  try {
+    const usageRecords = await WaterUsage.find();
+
+    // combine usage by activity
+    const aggregatedUsage = {};
+
+    // fetch activity details for usage rate
+    const allActivities = await WaterActivity.find();
+    const activityRates = allActivities.reduce((acc, activity) => {
+      acc[activity.activity] = activity.usageRatePerMinute;
+      return acc;
+    }, {});
+
+    usageRecords.forEach(record => {
+      record.usage.forEach(entry => {
+        if (!aggregatedUsage[entry.activity]) {
+          aggregatedUsage[entry.activity] = { totalMinutes: 0, totalUsage: 0 };
+        }
+        // get total minutes and usage for the activity
+        aggregatedUsage[entry.activity].totalMinutes += entry.minutes;
+        aggregatedUsage[entry.activity].totalUsage += entry.minutes * activityRates[entry.activity];
+      });
+    });
+
+    // convert combined data into an array for easy frontend use
+    const aggregatedArray = Object.keys(aggregatedUsage).map(activity => {
+      const totalMinutes = aggregatedUsage[activity].totalMinutes;
+      const totalUsage = aggregatedUsage[activity].totalUsage;
+      const totalUsageInLiters = totalUsage;
+
+      return {
+        activity,
+        totalMinutes,
+        totalUsageInLiters,
+      };
+    });
+
+    res.json(aggregatedArray);
+  } catch (err) {
+    res.status(500).send("Error fetching usage records");
+  }
+});
+
+
 
 // Helper function
 function getLocalDateWithoutTime() {

@@ -35,6 +35,14 @@ function MenuBar() {
             Misc
           </Link>
         </li>
+        <li>
+          <Link
+            to="/analysis"
+            className={`text-white font-semibold px-4 py-2 rounded ${isActive('/analysis') ? 'bg-blue-700' : 'hover:bg-blue-600'}`}
+          >
+            Analysis
+          </Link>
+        </li>
       </ul>
     </nav>
   );
