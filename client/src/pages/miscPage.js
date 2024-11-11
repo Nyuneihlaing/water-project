@@ -6,6 +6,22 @@ function MiscPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [error, setError] = useState('');
 
+  const [activities, setActivities] = useState([]);
+  const [selectedActivityId, setSelectedActivityId] = useState('');
+  
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/activities');
+        setActivities(response.data);
+      } catch (error) {
+        setError('Failed to load activities.');
+      }
+    };
+
+    fetchActivities();
+  }, []);
+
   const addNewActivity = async () => {
     if (!newActivity.name || !newActivity.rate || parseFloat(newActivity.rate) <= 0) {
       setError("Please provide a valid name and rate greater than 0 for the new activity.");
@@ -25,6 +41,25 @@ function MiscPage() {
   
     }catch (error) {
       setError("Failed to add new activity.");
+    }
+  };
+
+  const deleteActivity = async () => {
+    if (!selectedActivityId) {
+      setError('Please select an activity to delete.');
+      return;
+    }
+
+    try {
+      const response = await axios.delete('http://localhost:3000/delete-activity-permanently', {
+        data: { activityId: selectedActivityId },
+      });
+      setSuccessMessage('Activity successfully deleted!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      // Refresh activities list
+      setActivities((prevActivities) => prevActivities.filter(activity => activity._id !== selectedActivityId));
+    } catch (error) {
+      setError('Failed to delete activity.');
     }
   };
 
@@ -57,8 +92,33 @@ function MiscPage() {
           />
 
           <button onClick={addNewActivity} className="bg-green-500 text-white p-2 rounded">Add Activity</button>
-        </div>
+
+          <div className="mt-6">
+          <h2 className="text-xl font-bold mb-2">Delete Activity</h2>
+          <select
+            value={selectedActivityId}
+            onChange={(e) => setSelectedActivityId(e.target.value)}
+            className="block w-full p-2 border border-gray-300 rounded mb-2"
+          >
+            <option value="">Select an activity</option>
+            {activities.map((activity) => (
+              <option key={activity._id} value={activity._id}>
+                {activity.activity} ({activity.usageRatePerMinute} L/min)
+              </option>
+            ))}
+          </select>
+
+          <button onClick={deleteActivity} 
+            className="bg-red-500 text-white p-2 rounded"
+            disabled={activities.length <= 1}   
+          >
+            Delete Activity
+          </button>
+
+      </div>
     </div>
+  </div>
+    
   );
 }
 
