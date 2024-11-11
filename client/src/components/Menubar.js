@@ -43,6 +43,14 @@ function MenuBar() {
             Analysis
           </Link>
         </li>
+        <li>
+          <Link
+            to="/learn-more"
+            className={`text-white font-semibold px-4 py-2 rounded ${isActive('/learn-more') ? 'bg-blue-700' : 'hover:bg-blue-600'}`}
+          >
+            Learn More
+          </Link>
+        </li>
       </ul>
     </nav>
   );
