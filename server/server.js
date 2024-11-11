@@ -265,6 +265,34 @@ app.delete('/delete-activity', async (req, res) => {
   }
 });
 
+// delete an activity and remove it from all water usage records
+app.delete('/delete-activity-permanently', async (req, res) => {
+  const { activityId } = req.body;
+
+  if (!activityId) {
+    return res.status(400).json({ error: "Activity ID is required." });
+  }
+
+  try {
+    const deletedActivity = await WaterActivity.findByIdAndDelete(activityId);
+
+    if (!deletedActivity) {
+      return res.status(404).json({ error: "Activity not found." });
+    }
+
+    // remove the deleted activity from all water usage records
+    await WaterUsage.updateMany(
+      { 'usage.activity': deletedActivity.activity },
+      { $pull: { usage: { activity: deletedActivity.activity } } }
+    );
+
+    res.json({ message: "Activity and associated water usage data deleted successfully." });
+  } catch (err) {
+    console.error("Error deleting activity:", err);
+    res.status(500).json({ error: "Failed to delete activity." });
+  }
+});
+
 
 // Helper function
 function getLocalDateWithoutTime() {
