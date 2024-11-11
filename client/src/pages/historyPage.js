@@ -42,6 +42,43 @@ function HistoryPage() {
     }
   };
 
+  const handleUpdateActivity = async (entryId, currentMinutes) => {
+    const newMinutes = prompt("Enter new minutes:", currentMinutes);
+    if (newMinutes === null) return; // User canceled prompt
+    
+    if (newMinutes < 0) {
+      setError("Updated minutes cannot be less than 0.");
+      return;
+    }
+
+    try {
+      await axios.put(`http://localhost:3000/update-activity`, {
+        entryId,
+        newMinutes: parseInt(newMinutes, 10)
+      });
+      fetchUsageData(); // refresh data
+      fetchTotalUsage();
+    } catch (err) {
+      console.error("Error updating activity:", err);
+      setError("Failed to update activity.");
+    }
+  };
+  
+  const handleDeleteActivity = async (entryId) => {
+    if (!window.confirm("Are you sure you want to delete this activity?")) return;
+  
+    try {
+      await axios.delete(`http://localhost:3000/delete-activity`, {
+        data: { entryId }
+      });
+      fetchUsageData(); // refresh the data
+      fetchTotalUsage();
+    } catch (err) {
+      console.error("Error deleting activity:", err);
+      setError("Failed to delete activity.");
+    }
+  };  
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
       <h1 className="text-2xl font-bold text-blue-500 mb-6">Water Usage History</h1>
@@ -66,13 +103,28 @@ function HistoryPage() {
             <tr>
               <th className="p-4">Activity</th>
               <th className="p-4">Minutes</th>
+              <th className="p-4">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {usageData.map((activity, index) => (
-              <tr key={index} className="border-t">
+            {usageData.map((activity) => (
+              <tr key={activity.entryId} className="border-t">
                 <td className="p-4">{activity.activity}</td>
                 <td className="p-4">{activity.minutes} min</td>
+                <td className="p-4 text-center">
+                  <button
+                    onClick={() => handleUpdateActivity(activity.entryId, activity.minutes)}
+                    className="bg-blue-500 text-white px-2 py-1 rounded mr-2"
+                  >
+                    Update
+                  </button>
+                  <button
+                    onClick={() => handleDeleteActivity(activity.entryId)}
+                    className="bg-red-500 text-white px-2 py-1 rounded"
+                  >
+                    Delete
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
