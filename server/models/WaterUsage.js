@@ -1,5 +1,6 @@
 // WaterUsage.js
 const mongoose = require('mongoose');
+const { ObjectId } = mongoose.Schema.Types;
 
 const WaterUsageSchema = new mongoose.Schema({
   date: {
@@ -8,6 +9,7 @@ const WaterUsageSchema = new mongoose.Schema({
   },
   usage: [
     {
+      entryId: { type: ObjectId, default: new mongoose.Types.ObjectId() }, // a unique id
       activity: { type: String, required: true },
       minutes: { type: Number, required: true }
     }

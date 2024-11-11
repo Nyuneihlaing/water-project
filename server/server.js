@@ -108,6 +108,7 @@ app.post('/save-usage', async (req, res) => {
     const formattedDate = getLocalDateWithoutTime(); // ISO format for consistency
 
     const updatedUsage = usage.map((entry) => ({
+      entryId: new mongoose.Types.ObjectId(),
       activity: entry.activity,
       minutes: entry.minutes
     }));
@@ -208,6 +209,59 @@ app.get('/calculate-total-usage', async (req, res) => {
   } catch (err) {
     console.error("Error calculating total water usage:", err);
     res.status(500).json({ error: "Failed to calculate total water usage." });
+  }
+});
+
+
+// update the activity's minutes in water usage for a given date
+app.put('/update-activity', async (req, res) => {
+  const { entryId, newMinutes } = req.body;
+
+  if (!entryId || newMinutes === undefined) {
+    return res.status(400).json({ error: "Entry ID and new minutes are required." });
+  }
+
+  try {
+    const updatedUsage = await WaterUsage.findOneAndUpdate(
+      { 'usage.entryId': entryId },
+      { $set: { 'usage.$.minutes': newMinutes } }, // update only the specified entry's minutes
+      { new: true }
+    );
+
+    if (!updatedUsage) {
+      return res.status(404).json({ error: "Activity not found for the specified entryId." });
+    }
+
+    res.json({ message: "Activity updated successfully.", updatedUsage });
+  } catch (err) {
+    console.error("Error updating activity:", err);
+    res.status(500).json({ error: "Failed to update activity." });
+  }
+});
+
+// delete an activity
+app.delete('/delete-activity', async (req, res) => {
+  const { entryId } = req.body;
+
+  if (!entryId) {
+    return res.status(400).json({ error: "Entry ID is required." });
+  }
+
+  try {
+    const updatedUsage = await WaterUsage.findOneAndUpdate(
+      { 'usage.entryId': entryId },
+      { $pull: { usage: { entryId } } }, // Remove the entry with the specific entryId
+      { new: true }
+    );
+
+    if (!updatedUsage) {
+      return res.status(404).json({ error: "Activity not found for the specified entryId." });
+    }
+
+    res.json({ message: "Activity deleted successfully.", updatedUsage });
+  } catch (err) {
+    console.error("Error deleting activity:", err);
+    res.status(500).json({ error: "Failed to delete activity." });
   }
 });
 
