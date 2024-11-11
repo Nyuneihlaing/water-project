@@ -8,6 +8,8 @@ function CalculatePage() {
   const [error, setError] = useState('');
   const [showSaveButton, setShowSaveButton] = useState(false);
 
+  const [waterLimit, setWaterLimit] = useState(100);
+
 useEffect(() => {
     axios.get('http://localhost:3000/activities')
         .then(response => {
@@ -19,7 +21,20 @@ useEffect(() => {
             console.error("Error fetching activities", error);
             setError("Error fetching activities.");
         });
+
+    axios.get('http://localhost:3000/water-limit')
+      .then(response => {
+        setWaterLimit(response.data.limit);
+      })
+      .catch(error => {
+        setError("Error fetching water limit", error);
+      });
 }, []);
+
+function getLocalDate() {
+  const today = new Date();
+  return new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split("T")[0];
+}
 
 // When called, it adds a NEW activity to the array
 const addActivityField = () => {
@@ -105,6 +120,17 @@ const handleSave = async () => {
   } catch (err) {
     setError("Failed to save usage data.");
   }
+
+  // fetch today's water usage
+  const today = getLocalDate();  // Get today's date
+  const todayUsageResponse = await axios.get(`http://localhost:3000/calculate-total-usage?date=${today}`);
+  const todayUsage = todayUsageResponse.data.totalUsage;
+
+  if (todayUsage > waterLimit) {
+    alert(`Warning: Your total usage of ${todayUsage} liters exceeds the water limit of ${waterLimit} liters.`);
+  }
+  
+
 };
 
 return (

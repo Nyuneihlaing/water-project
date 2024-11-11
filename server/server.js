@@ -4,6 +4,7 @@ const app = express();
 const port = 3000;
 const WaterActivity = require('./models/WaterActivity'); // Le Schema import
 const WaterUsage = require('./models/WaterUsage');
+const WaterLimit = require('./models/WaterLimit');
 
 app.use(express.json());
 
@@ -23,25 +24,42 @@ const defaultActivities = [
 
 // Callable function to check if the default mapping exists
 const initializeWaterActivities = async () => {
-    try {
-      const count = await WaterActivity.countDocuments();
-      
-      if (count === 0) { // If there are no existing docs, insert the default activities
-        await WaterActivity.insertMany(defaultActivities);
-        console.log('Default water activities inserted.');
-      } else {
-        console.log('Water activities already exist in the database.');
-      }
-    } catch (err) {
-      console.error('Error checking or inserting water activities:', err);
+  try {
+    const count = await WaterActivity.countDocuments();
+    
+    if (count === 0) { // If there are no existing docs, insert the default activities
+      await WaterActivity.insertMany(defaultActivities);
+      console.log('Default water activities inserted.');
+    } else {
+      console.log('Water activities already exist in the database.');
     }
-  };
+  } catch (err) {
+    console.error('Error checking or inserting water activities:', err);
+  }
+};
   
+// Initialize water limit to 100 liters if not set
+const initializeWaterLimit = async () => {
+  try {
+    const existingLimit = await WaterLimit.findOne();
+    if (!existingLimit) {
+      const newLimit = new WaterLimit({ limit: 100 });
+      await newLimit.save();
+      console.log('Default water limit of 100 liters set.');
+    } else {
+      console.log('Water limit already exists in the database.');
+    }
+  } catch (err) {
+    console.error('Error checking or setting water limit:', err);
+  }
+};
+
 // Connect to MongoDB and initialize data... if needed.
 mongoose.connect(mongoURL)
 .then(() => {
     console.log('MongoDB Connection Successful');
     initializeWaterActivities();
+    initializeWaterLimit();
 })
 .catch(err => console.error('Error connecting to MongoDB:', err));
 
@@ -290,6 +308,37 @@ app.delete('/delete-activity-permanently', async (req, res) => {
   } catch (err) {
     console.error("Error deleting activity:", err);
     res.status(500).json({ error: "Failed to delete activity." });
+  }
+});
+
+// retrieve water limit
+app.get('/water-limit', async (req, res) => {
+  try {
+    const waterLimit = await WaterLimit.findOne();
+    res.json({ limit: waterLimit ? waterLimit.limit : 0 });
+  } catch (err) {
+    res.status(500).send('Error retrieving water limit');
+  }
+});
+
+// set the limit
+app.post('/set-water-limit', async (req, res) => {
+  const { limit } = req.body;
+
+  try {
+    // if a water limit exists already, update it. otherwise, create a new one
+    const existingLimit = await WaterLimit.findOne();
+    if (existingLimit) {
+      existingLimit.limit = limit;
+      await existingLimit.save();
+    } else {
+      const newLimit = new WaterLimit({ limit });
+      await newLimit.save();
+    }
+
+    res.status(200).send('Water limit saved');
+  } catch (err) {
+    res.status(500).send('Error setting water limit');
   }
 });
 

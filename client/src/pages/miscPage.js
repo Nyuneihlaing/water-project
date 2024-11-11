@@ -8,6 +8,11 @@ function MiscPage() {
 
   const [activities, setActivities] = useState([]);
   const [selectedActivityId, setSelectedActivityId] = useState('');
+
+  const [waterLimit, setWaterLimit] = useState(0);
+  const [newLimit, setNewLimit] = useState('');
+  const [waterLimitSuccessMessage, setWaterLimitSuccessMessage] = useState('');
+  const [waterLimitError, setWaterLimitError] = useState('');
   
   useEffect(() => {
     const fetchActivities = async () => {
@@ -19,7 +24,17 @@ function MiscPage() {
       }
     };
 
+    const fetchWaterLimit = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/water-limit');
+        setWaterLimit(response.data.limit);
+      } catch (error) {
+        setWaterLimitError('Failed to fetch current water limit.');
+      }
+    };
+
     fetchActivities();
+    fetchWaterLimit();
   }, []);
 
   const addNewActivity = async () => {
@@ -63,8 +78,30 @@ function MiscPage() {
     }
   };
 
+  // for setting a new water limit
+  const setWaterLimitHandler = async () => {
+    if (!newLimit || isNaN(newLimit) || parseFloat(newLimit) <= 0) {
+      setWaterLimitError('Please input a valid water limit.');
+      return;
+    }
+    try {
+      await axios.post('http://localhost:3000/set-water-limit', {
+        limit: parseFloat(newLimit),
+      });
+
+      setWaterLimit(newLimit); // Update state with new limit
+      setNewLimit(''); // Clear input field
+      setWaterLimitError('');
+      setWaterLimitSuccessMessage('Water limit set successfully!');
+      setTimeout(() => setWaterLimitSuccessMessage(''), 3000);
+
+    } catch (error) {
+      setWaterLimitError('Failed to set water limit.');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center items-center">
+    <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center">
         {/* Add new activity form */}
         <div className="bg-white p-4 rounded-lg shadow-md mt-6 w-full max-w-md">
           <h2 className="text-xl font-bold mb-2">Add New Activity</h2>
@@ -117,6 +154,23 @@ function MiscPage() {
 
       </div>
     </div>
+
+    <div className="bg-white p-4 rounded-lg shadow-md mt-6 w-full max-w-md">
+        <h2 className="text-xl font-bold mb-2">Set Water Limit</h2>
+        <p className="mb-4">Current Water Limit: {waterLimit} liters</p>
+
+        {waterLimitError && <p className="text-red-500 mb-4">{waterLimitError}</p>}
+        {waterLimitSuccessMessage && <p className="text-green-500 mb-4">{waterLimitSuccessMessage}</p>}
+
+        <input
+          type="number"
+          value={newLimit}
+          onChange={(e) => setNewLimit(e.target.value)}
+          className="block w-full p-2 border border-gray-300 rounded mb-2"
+          placeholder="New Water Limit (liters)"
+        />
+        <button onClick={setWaterLimitHandler} className="w-full p-2 bg-green-500 text-white rounded">Set Limit</button>
+      </div>
   </div>
     
   );
