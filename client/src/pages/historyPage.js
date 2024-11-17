@@ -3,9 +3,14 @@ import axios from 'axios';
 
 function HistoryPage() {
   const [date, setDate] = useState(getLocalDate()); // Set default date to today
+  const [availableDates, setAvailableDates] = useState([]); // Dates with data
   const [usageData, setUsageData] = useState([]);
   const [totalUsage, setTotalUsage] = useState(0);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchAvailableDates(); // Fetch available dates on component mount
+  }, []);
 
   useEffect(() => {
     fetchUsageData();
@@ -17,6 +22,16 @@ function HistoryPage() {
     return new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split("T")[0];
   }
 
+  const fetchAvailableDates = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/available-dates'); // Endpoint to fetch available dates
+      setAvailableDates(response.data.dates || []);
+    } catch (err) {
+      console.error("Error fetching available dates:", err);
+      setError("Failed to fetch available dates.");
+    }
+  };
+
   const fetchUsageData = async () => {
     try {
       const response = await axios.get(`http://localhost:3000/water-usage-history?date=${date}`);
@@ -27,9 +42,7 @@ function HistoryPage() {
       setError("Failed to fetch water usage history.");
     }
   };
-  
 
-  // Fetch total water usage for selected date
   const fetchTotalUsage = async () => {
     try {
       const response = await axios.get(`http://localhost:3000/calculate-total-usage?date=${date}`);
@@ -45,7 +58,7 @@ function HistoryPage() {
   const handleUpdateActivity = async (entryId, currentMinutes) => {
     const newMinutes = prompt("Enter new minutes:", currentMinutes);
     if (newMinutes === null) return; // User canceled prompt
-    
+
     if (newMinutes < 0) {
       setError("Updated minutes cannot be less than 0.");
       return;
@@ -63,10 +76,10 @@ function HistoryPage() {
       setError("Failed to update activity.");
     }
   };
-  
+
   const handleDeleteActivity = async (entryId) => {
     if (!window.confirm("Are you sure you want to delete this activity?")) return;
-  
+
     try {
       await axios.delete(`http://localhost:3000/delete-activity`, {
         data: { entryId }
@@ -77,7 +90,11 @@ function HistoryPage() {
       console.error("Error deleting activity:", err);
       setError("Failed to delete activity.");
     }
-  };  
+  };
+
+  const isDateAvailable = (selectedDate) => {
+    return availableDates.includes(selectedDate);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
@@ -89,8 +106,16 @@ function HistoryPage() {
         <input
           type="date"
           value={date}
-          onChange={(e) => setDate(e.target.value)}
+          onChange={(e) => {
+            if (isDateAvailable(e.target.value)) {
+              setDate(e.target.value);
+            } else {
+              alert("No data available for the selected date.");
+            }
+          }}
           className="p-2 border border-gray-300 rounded"
+          min={availableDates.length > 0 ? availableDates[0] : undefined}
+          max={availableDates.length > 0 ? availableDates[availableDates.length - 1] : undefined}
         />
       </div>
 

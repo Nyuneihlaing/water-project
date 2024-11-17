@@ -388,6 +388,19 @@ app.get('/past-usage', async (req, res) => {
 });
 
 
+app.get('/available-dates', async (req, res) => {
+  try {
+    // Fetch only the `date` field from WaterUsage documents
+    const usageRecords = await WaterUsage.find({}, { date: 1, _id: 0 });
+    // Convert the dates to a simple string format (e.g., 'YYYY-MM-DD')
+    const dates = usageRecords.map(record => record.date.toISOString().split('T')[0]);
+    res.json({ dates }); // Return the list of available dates
+  } catch (err) {
+    console.error("Error fetching available dates:", err);
+    res.status(500).json({ error: "Failed to fetch available dates." });
+  }
+});
+
 
 // Helper function
 function getLocalDateWithoutTime() {
