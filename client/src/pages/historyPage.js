@@ -1,26 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 function HistoryPage() {
-  const [date, setDate] = useState(getLocalDate()); // Set default date to today
+  const [date, setDate] = useState('');
   const [availableDates, setAvailableDates] = useState([]); // Dates with data
   const [usageData, setUsageData] = useState([]);
   const [totalUsage, setTotalUsage] = useState(0);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchAvailableDates(); // Fetch available dates on component mount
+    fetchAvailableDates(); // Fetch available dates on mount
   }, []);
-
-  useEffect(() => {
-    fetchUsageData();
-    fetchTotalUsage();
-  }, [date]);
-
-  function getLocalDate() {
-    const today = new Date();
-    return new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split("T")[0];
-  }
 
   const fetchAvailableDates = async () => {
     try {
@@ -32,18 +22,19 @@ function HistoryPage() {
     }
   };
 
-  const fetchUsageData = async () => {
+  const fetchUsageData = useCallback(async () => {
+    setUsageData([]); // Clear previous data
+    setError(''); // Clear previous error
     try {
       const response = await axios.get(`http://localhost:3000/water-usage-history?date=${date}`);
       setUsageData(response.data.usage || []); // Handle empty response safely
-      setError('');
     } catch (err) {
       console.error("Error fetching usage data:", err);
       setError("Failed to fetch water usage history.");
     }
-  };
+  }, [date]);
 
-  const fetchTotalUsage = async () => {
+  const fetchTotalUsage = useCallback(async () => {
     try {
       const response = await axios.get(`http://localhost:3000/calculate-total-usage?date=${date}`);
       setTotalUsage(response.data.totalUsage);
@@ -53,7 +44,14 @@ function HistoryPage() {
       setUsageData([]);
       setTotalUsage(0);
     }
-  };
+  }, [date]);
+
+  useEffect(() => {
+    if (date) {
+      fetchUsageData();
+      fetchTotalUsage();
+    }
+  }, [date, fetchUsageData, fetchTotalUsage]); // Include functions in the dependency array
 
   const handleUpdateActivity = async (entryId, currentMinutes) => {
     const newMinutes = prompt("Enter new minutes:", currentMinutes);
@@ -69,7 +67,7 @@ function HistoryPage() {
         entryId,
         newMinutes: parseInt(newMinutes, 10)
       });
-      fetchUsageData(); // refresh data
+      fetchUsageData(); // Refresh data
       fetchTotalUsage();
     } catch (err) {
       console.error("Error updating activity:", err);
@@ -84,7 +82,7 @@ function HistoryPage() {
       await axios.delete(`http://localhost:3000/delete-activity`, {
         data: { entryId }
       });
-      fetchUsageData(); // refresh the data
+      fetchUsageData(); // Refresh the data
       fetchTotalUsage();
     } catch (err) {
       console.error("Error deleting activity:", err);
@@ -92,8 +90,18 @@ function HistoryPage() {
     }
   };
 
-  const isDateAvailable = (selectedDate) => {
-    return availableDates.includes(selectedDate);
+  const isDateAvailable = (currentDate) => {
+    const formattedDate = new Date(currentDate).toISOString().split('T')[0];
+    return availableDates.includes(formattedDate);
+  };
+
+  const handleDateChange = (e) => {
+    const selectedDate = e.target.value;
+    if (isDateAvailable(selectedDate)) {
+      setDate(selectedDate);
+    } else {
+      alert("No data available for the selected date.");
+    }
   };
 
   return (
@@ -106,13 +114,7 @@ function HistoryPage() {
         <input
           type="date"
           value={date}
-          onChange={(e) => {
-            if (isDateAvailable(e.target.value)) {
-              setDate(e.target.value);
-            } else {
-              alert("No data available for the selected date.");
-            }
-          }}
+          onChange={handleDateChange}
           className="p-2 border border-gray-300 rounded"
           min={availableDates.length > 0 ? availableDates[0] : undefined}
           max={availableDates.length > 0 ? availableDates[availableDates.length - 1] : undefined}
@@ -122,7 +124,7 @@ function HistoryPage() {
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       {/* Water Usage Data Table */}
-      {usageData.length > 0 && (
+      {usageData.length > 0 ? (
         <table className="w-full max-w-4xl bg-white rounded-lg shadow-md">
           <thead className="bg-blue-500 text-white">
             <tr>
@@ -154,13 +156,15 @@ function HistoryPage() {
             ))}
           </tbody>
         </table>
+      ) : (
+        <p className="text-gray-500 mt-4">No water usage data found for the selected date.</p>
       )}
 
       {/* Display Total Usage */}
       {usageData.length > 0 && !error && (
         <div className="mt-6">
           <h2 className="text-xl font-bold">
-            Total Water Usage for {new Date(date + 'T00:00').toLocaleDateString()}: {totalUsage} L
+            Total Water Usage for {date}: {totalUsage} L
           </h2>
         </div>
       )}
