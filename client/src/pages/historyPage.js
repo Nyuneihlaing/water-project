@@ -23,11 +23,11 @@ function HistoryPage() {
   };
 
   const fetchUsageData = useCallback(async () => {
-    setUsageData([]); // Clear previous data
-    setError(''); // Clear previous error
+    setUsageData([]);
+    setError('');
     try {
       const response = await axios.get(`http://localhost:3000/water-usage-history?date=${date}`);
-      setUsageData(response.data.usage || []); // Handle empty response safely
+      setUsageData(response.data.usage || []);
     } catch (err) {
       console.error("Error fetching usage data:", err);
       setError("Failed to fetch water usage history.");
@@ -47,11 +47,24 @@ function HistoryPage() {
   }, [date]);
 
   useEffect(() => {
-    if (date) {
+    if (date && availableDates.includes(date)) {
       fetchUsageData();
       fetchTotalUsage();
+    } else if (date) {
+      setError("Selected date has no data available.");
     }
-  }, [date, fetchUsageData, fetchTotalUsage]); // Include functions in the dependency array
+  }, [date, fetchUsageData, fetchTotalUsage, availableDates]);
+
+  const handleDateChange = (e) => {
+    const selectedDate = e.target.value;
+    if (availableDates.includes(selectedDate)) {
+      setDate(selectedDate);
+      setError(''); // Clear any previous error
+    } else {
+      setDate(''); // Clear the date if invalid
+      setError("Selected date has no data available.");
+    }
+  };
 
   const handleUpdateActivity = async (entryId, currentMinutes) => {
     const newMinutes = prompt("Enter new minutes:", currentMinutes);
@@ -65,7 +78,7 @@ function HistoryPage() {
     try {
       await axios.put(`http://localhost:3000/update-activity`, {
         entryId,
-        newMinutes: parseInt(newMinutes, 10)
+        newMinutes: parseInt(newMinutes, 10),
       });
       fetchUsageData(); // Refresh data
       fetchTotalUsage();
@@ -80,27 +93,13 @@ function HistoryPage() {
 
     try {
       await axios.delete(`http://localhost:3000/delete-activity`, {
-        data: { entryId }
+        data: { entryId },
       });
       fetchUsageData(); // Refresh the data
       fetchTotalUsage();
     } catch (err) {
       console.error("Error deleting activity:", err);
       setError("Failed to delete activity.");
-    }
-  };
-
-  const isDateAvailable = (currentDate) => {
-    const formattedDate = new Date(currentDate).toISOString().split('T')[0];
-    return availableDates.includes(formattedDate);
-  };
-
-  const handleDateChange = (e) => {
-    const selectedDate = e.target.value;
-    if (isDateAvailable(selectedDate)) {
-      setDate(selectedDate);
-    } else {
-      alert("No data available for the selected date.");
     }
   };
 
