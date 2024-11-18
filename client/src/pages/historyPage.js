@@ -57,6 +57,8 @@ function HistoryPage() {
 
   const handleDateChange = (e) => {
     const selectedDate = e.target.value;
+    setUsageData([]);
+    setTotalUsage(0);
     if (availableDates.includes(selectedDate)) {
       setDate(selectedDate);
       setError(''); // Clear any previous error
