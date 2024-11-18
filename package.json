@@ -3,10 +3,9 @@
     "start": "concurrently \"yarn start-client\" \"yarn start-server\"",
     "start-client": "yarn --cwd client start",
     "start-server": "yarn --cwd server start",
-    "install-all": "npm install && npm --prefix client install && npm --prefix server install"
+    "install-all": "yarn install && yarn install --cwd client && yarn install --cwd server"
   },
   "dependencies": {
-    "concurrently": "^9.1.0",
-    "install-all": "^1.1.0"
+    "concurrently": "^9.1.0"
   }
 }
