@@ -276,6 +276,11 @@ app.delete('/delete-activity', async (req, res) => {
       return res.status(404).json({ error: "Activity not found for the specified entryId." });
     }
 
+    if (updatedUsage.usage.length === 0) {
+      await WaterUsage.deleteOne({ _id: updatedUsage._id });
+      return res.json({ message: "Activity deleted successfully and document removed since no activities remain.", updatedUsage });
+    }
+
     res.json({ message: "Activity deleted successfully.", updatedUsage });
   } catch (err) {
     console.error("Error deleting activity:", err);
@@ -387,6 +392,18 @@ app.get('/past-usage', async (req, res) => {
   }
 });
 
+//get available dates
+app.get('/available-dates', async (req, res) => {
+  try {
+    const dates = await WaterUsage.distinct('date');
+    const formattedDates = dates.map((date) => date.toISOString().split('T')[0]);
+    res.json({ dates: formattedDates });
+    
+  } catch (err) {
+    console.error('Error fetching available dates:', err);
+    res.status(500).json({ error: 'Failed to fetch available dates.' });
+  }
+});
 
 
 // Helper function

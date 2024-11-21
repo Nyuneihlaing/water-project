@@ -1,21 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 function HistoryPage() {
-  const [date, setDate] = useState(getLocalDate()); // Set default date to today
+  const [date, setDate] = useState(null); // set initial to null
   const [usageData, setUsageData] = useState([]);
   const [totalUsage, setTotalUsage] = useState(0);
+  const [availableDates, setAvailableDates] = useState([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchUsageData();
-    fetchTotalUsage();
+    fetchAvailableDates();
+    if (date) {
+      fetchUsageData();
+      fetchTotalUsage();
+    }
   }, [date]);
 
-  function getLocalDate() {
-    const today = new Date();
-    return new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split("T")[0];
+  function parseLocalDate(dateString) {
+    if (!dateString) return null;
+    const [year, month, day] = dateString.split("-");
+    return new Date(year, month - 1, day);
   }
+
+  const fetchAvailableDates = async () => {
+    try {
+      const response = await axios.get("http://localhost:3000/available-dates");
+      const formattedDates = response.data.dates.map(dateString => {
+        const utcDate = new Date(dateString);
+        return new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000); //local time
+      });
+      setAvailableDates(formattedDates);
+      setError("");
+    } catch (err) {
+      console.error("Error fetching available dates:", err);
+      setError("Failed to fetch available dates.");
+    }
+  };
+
 
   const fetchUsageData = async () => {
     try {
@@ -68,17 +91,22 @@ function HistoryPage() {
     if (!window.confirm("Are you sure you want to delete this activity?")) return;
   
     try {
-      await axios.delete(`http://localhost:3000/delete-activity`, {
+      const response = await axios.delete(`http://localhost:3000/delete-activity`, {
         data: { entryId }
       });
+
+      if (response.data.message.includes("document removed")) {
+        setDate(null); // reset the date if the document was deleted
+      }
+
       fetchUsageData(); // refresh the data
       fetchTotalUsage();
     } catch (err) {
       console.error("Error deleting activity:", err);
       setError("Failed to delete activity.");
     }
-  };  
-
+  }; 
+  
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
       <h1 className="text-2xl font-bold text-blue-500 mb-6">Water Usage History</h1>
@@ -86,14 +114,23 @@ function HistoryPage() {
       {/* Date Selection */}
       <div className="mb-4">
         <label className="mr-2">Select Date:</label>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
+        <DatePicker
+          selected={date ? parseLocalDate(date) : null} // Handle null date
+          onChange={(selectedDate) => {
+            if (selectedDate) {
+              setDate(new Date(selectedDate.getTime() - selectedDate.getTimezoneOffset() * 60000).toISOString().split("T")[0]);
+            } else {
+              setDate(null);
+            }
+          }}
           className="p-2 border border-gray-300 rounded"
+          includeDates={availableDates}
+          dateFormat="yyyy-MM-dd"
         />
       </div>
 
+      {!date && <p className="text-gray-500 mt-4">Please select a date to view water usage history.</p>}
+      
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       {/* Water Usage Data Table */}
@@ -135,7 +172,7 @@ function HistoryPage() {
       {usageData.length > 0 && !error && (
         <div className="mt-6">
           <h2 className="text-xl font-bold">
-            Total Water Usage for {new Date(date + 'T00:00').toLocaleDateString()}: {totalUsage} L
+            Total Water Usage for {new Date(parseLocalDate(date)).toLocaleDateString()}: {totalUsage} L
           </h2>
         </div>
       )}
