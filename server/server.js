@@ -405,6 +405,33 @@ app.get('/available-dates', async (req, res) => {
   }
 });
 
+app.put('/activities/:id', async (req, res) => {
+  const { id } = req.params;
+  const { activity, usageRatePerMinute } = req.body;
+
+  if (!activity || usageRatePerMinute == null) {
+    return res.status(400).json({ error: 'Activity and usage rate are required.' });
+  }
+
+  try {
+    const updatedActivity = await WaterActivity.findByIdAndUpdate(
+      id,
+      { activity, usageRatePerMinute },
+      { new: true } // Returns the updated document
+    );
+
+    if (!updatedActivity) {
+      return res.status(404).json({ error: 'Activity not found.' });
+    }
+
+    res.json(updatedActivity);
+  } catch (err) {
+    console.error('Error updating activity:', err);
+    res.status(500).json({ error: 'Failed to update activity.' });
+  }
+});
+
+
 
 // Helper function
 function getLocalDateWithoutTime() {
@@ -417,3 +444,4 @@ function getLocalDateWithoutTime() {
 app.listen(port, () => {
 console.log(`Server is running on http://localhost:${port}`);
 });
+
