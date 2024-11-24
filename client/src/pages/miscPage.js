@@ -163,9 +163,33 @@ function MiscPage() {
       {/* Edit Activity Section */}
       <div className="bg-white p-4 rounded-lg shadow-md mt-6 w-full max-w-md">
         <h2 className="text-xl font-bold mb-2">Edit Activity</h2>
-        {selectedActivity ? (
-          <div className="edit-form">
-            <h3 className="font-semibold mb-2">Editing: {selectedActivity.activity}</h3>
+        <select
+          value={selectedActivity ? selectedActivity._id : ''}
+          onChange={(e) => {
+            const activityId = e.target.value;
+            if (activityId) {
+              const activity = activities.find((a) => a._id === activityId);
+              setSelectedActivity(activity);
+              setEditActivity({
+                name: activity.activity,
+                rate: activity.usageRatePerMinute,
+              });
+            } else {
+              setSelectedActivity(null);
+              setEditActivity({ name: '', rate: '' });
+            }
+          }}
+          className="block w-full p-2 border border-gray-300 rounded mb-2"
+        >
+          <option value="">Select an activity to edit</option>
+          {activities.map((activity) => (
+            <option key={activity._id} value={activity._id}>
+              {activity.activity} ({activity.usageRatePerMinute} L/min)
+            </option>
+          ))}
+        </select>
+        {selectedActivity && (
+          <div className="edit-form mt-4">
             <input
               type="text"
               value={editActivity.name}
@@ -187,22 +211,9 @@ function MiscPage() {
               Cancel
             </button>
           </div>
-        ) : (
-          <div>
-            <h3>Select an activity to edit</h3>
-            <ul>
-              {activities.map((activity) => (
-                <li key={activity._id}>
-                  {activity.activity} ({activity.usageRatePerMinute} L/min)
-                  <button onClick={() => handleEditActivity(activity)} className="ml-2 text-blue-500">
-                    Edit
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
         )}
       </div>
+
 
       <div className="bg-white p-4 rounded-lg shadow-md mt-6 w-full max-w-md">
         <h2 className="text-xl font-bold mb-2">Delete Activity</h2>
