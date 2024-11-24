@@ -6,7 +6,10 @@
     "install-all": "yarn install && yarn install --cwd client && yarn install --cwd server"
   },
   "dependencies": {
+    "chart.js": "^4.4.6",
     "concurrently": "^9.1.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-datepicker": "^7.5.0",
     "yarn": "^1.22.22"
   }
 }
