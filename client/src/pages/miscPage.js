@@ -111,13 +111,25 @@ function MiscPage() {
       setError('Please provide valid values for name and rate.');
       return;
     }
-
+  
+    // Check for duplicate activity name
+    if (
+      activities.some(
+        (activity) =>
+          activity.activity.toLowerCase() === editActivity.name.toLowerCase() &&
+          activity._id !== selectedActivity._id
+      )
+    ) {
+      setError('An activity with this name already exists.');
+      return;
+    }
+  
     try {
       const response = await axios.put(`http://localhost:3000/activities/${selectedActivity._id}`, {
         activity: editActivity.name,
         usageRatePerMinute: parseFloat(editActivity.rate),
       });
-
+  
       setActivities((prev) =>
         prev.map((activity) =>
           activity._id === selectedActivity._id
@@ -125,15 +137,17 @@ function MiscPage() {
             : activity
         )
       );
-
+  
       setSuccessMessage('Activity successfully updated!');
       setTimeout(() => setSuccessMessage(''), 3000);
       setSelectedActivity(null);
       setError('');
     } catch (err) {
-      setError('Failed to update activity.');
+      console.error('Error updating activity:', err);
+      setError(err.response?.data?.error || 'Failed to update activity.');
     }
   };
+  
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center">

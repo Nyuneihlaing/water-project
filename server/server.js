@@ -405,6 +405,7 @@ app.get('/available-dates', async (req, res) => {
   }
 });
 
+// Update activity and rename in history
 app.put('/activities/:id', async (req, res) => {
   const { id } = req.params;
   const { activity, usageRatePerMinute } = req.body;
@@ -414,15 +415,32 @@ app.put('/activities/:id', async (req, res) => {
   }
 
   try {
+    // Check for duplicate activity name
+    const duplicateActivity = await WaterActivity.findOne({ activity });
+    if (duplicateActivity && duplicateActivity._id.toString() !== id) {
+      return res.status(400).json({ error: 'An activity with this name already exists.' });
+    }
+
+    // Get the old activity name
+    const oldActivity = await WaterActivity.findById(id);
+    if (!oldActivity) {
+      return res.status(404).json({ error: 'Activity not found.' });
+    }
+    const oldActivityName = oldActivity.activity;
+
+    // Update the activity
     const updatedActivity = await WaterActivity.findByIdAndUpdate(
       id,
       { activity, usageRatePerMinute },
-      { new: true } // Returns the updated document
+      { new: true }
     );
 
-    if (!updatedActivity) {
-      return res.status(404).json({ error: 'Activity not found.' });
-    }
+    // Update historical records in WaterUsage
+    await WaterUsage.updateMany(
+      { 'usage.activity': oldActivityName },
+      { $set: { 'usage.$[elem].activity': activity } },
+      { arrayFilters: [{ 'elem.activity': oldActivityName }] }
+    );
 
     res.json(updatedActivity);
   } catch (err) {
@@ -430,6 +448,7 @@ app.put('/activities/:id', async (req, res) => {
     res.status(500).json({ error: 'Failed to update activity.' });
   }
 });
+
 
 
 
